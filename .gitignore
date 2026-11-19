@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+venv/
+.venv/
+node_modules/
+Unit-3-PCA/archive/train-images-idx3-ubyte
+Unit-3-PCA/archive/fashion-mnist_train.csv

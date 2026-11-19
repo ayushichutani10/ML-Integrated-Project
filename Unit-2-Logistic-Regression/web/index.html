@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer Churn Prediction – Batch 6</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1b2033;--mute:#5d6580;--acc:#3b5bdb;--hot:#e8590c;--ok:#2b8a3e;--line:#dfe3ef;--code:#10142a}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1220;--card:#181c30;--ink:#eef0fa;--mute:#a3aac6;--acc:#7c93ff;--hot:#ff8a4c;--ok:#51cf66;--line:#2a3050}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+header{padding:22px 32px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{margin:0;font-size:1.5rem}header p{margin:2px 0 0;color:var(--mute)}
+nav{display:flex;gap:6px;padding:10px 32px;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav button{border:0;background:transparent;color:var(--mute);padding:9px 16px;border-radius:8px;font-size:.98rem;cursor:pointer}
+nav button.on{background:var(--acc);color:#fff}
+main{max-width:1150px;margin:0 auto;padding:26px 32px 60px}
+section{display:none}section.on{display:block}
+h2{margin:0 0 6px}.lead{color:var(--mute);margin:0 0 20px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat{font-size:2rem;font-weight:700;color:var(--acc)}.stat small{display:block;font-size:.85rem;font-weight:400;color:var(--mute)}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.num{background:var(--hot);color:#fff;width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);margin:10px 0 22px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--acc);color:#fff}
+td.hl{background:rgba(232,89,12,.18)}
+img{max-width:100%;border-radius:12px;border:1px solid var(--line);background:#fff}
+.imgs{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+pre{background:var(--code);color:#e6e9ff;padding:16px;border-radius:12px;overflow:auto;max-height:420px;font-size:.82rem;line-height:1.5}
+details{margin:8px 0}summary{cursor:pointer;color:var(--acc);font-weight:600}
+.bars .row{display:grid;grid-template-columns:minmax(150px,30%) 1fr 60px;gap:10px;align-items:center;font-size:.9rem;margin:5px 0}
+.bar{height:14px;border-radius:7px}.up{background:var(--hot)}.down{background:var(--acc)}
+form{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+label{font-size:.82rem;color:var(--mute);display:block;margin-bottom:3px}
+input,select{width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.95rem}
+.go{margin-top:16px;background:var(--acc);color:#fff;border:0;padding:12px 28px;border-radius:10px;font-size:1.05rem;cursor:pointer}
+.gauge{height:22px;border-radius:11px;background:var(--line);overflow:hidden;margin:10px 0}
+.gauge div{height:100%;transition:width .5s}
+.big{font-size:2.6rem;font-weight:800}
+.note{color:var(--mute);font-size:.9rem}
+</style>
+</head>
+<body>
+<header><h1>Customer Churn Prediction</h1><p>Batch 6 · Logistic Regression · end-to-end ML project walkthrough</p></header>
+<nav id="nav"></nav>
+<main>
+
+<section id="overview"><h2>Project Overview</h2>
+<p class="lead">Goal: predict whether a customer will leave a service (binary classification).</p>
+<div class="grid" id="stats"></div>
+<h2 style="margin-top:28px">How the project works</h2>
+<div class="steps">
+<div class="step"><div class="num">1</div><div><b>Load &amp; clean</b> – read the CSV, fix blank <code>TotalCharges</code>, drop <code>customerID</code>, encode the target. <span class="note">(Data tab)</span></div></div>
+<div class="step"><div class="num">2</div><div><b>Explore</b> – see which customer groups churn most. <span class="note">(EDA tab)</span></div></div>
+<div class="step"><div class="num">3</div><div><b>Preprocess &amp; split</b> – scale numbers, one-hot encode categories, stratified 80/20 split. <span class="note">(Training tab)</span></div></div>
+<div class="step"><div class="num">4</div><div><b>Train</b> – Logistic Regression tuned by 5-fold cross-validation; Random Forest for comparison. <span class="note">(Training tab)</span></div></div>
+<div class="step"><div class="num">5</div><div><b>Evaluate &amp; interpret</b> – precision, recall, F1, ROC-AUC, coefficients. <span class="note">(Results tab)</span></div></div>
+<div class="step"><div class="num">6</div><div><b>Predict</b> – enter a customer and get a churn probability with reasons. <span class="note">(Try it tab)</span></div></div>
+</div></section>
+
+<section id="data"><h2>Data &amp; Cleaning</h2>
+<p class="lead">Raw data versus the cleaned data fed to the model.</p>
+<div class="grid" id="dataStats"></div>
+<h3>Raw data (first 8 rows)</h3><div class="tblwrap" id="rawT"></div>
+<h3>After cleaning</h3>
+<p class="note">Blank TotalCharges converted to numbers (blanks → 0), customerID dropped, Churn: Yes → 1, No → 0.</p>
+<div class="tblwrap" id="cleanT"></div>
+<details><summary>Show the cleaning code (src/data_prep.py)</summary><pre id="src-data_prep.py"></pre></details></section>
+
+<section id="eda"><h2>Exploratory Data Analysis</h2>
+<p class="lead">Patterns in who churns.</p>
+<div class="imgs">
+<div><img src="/figures/01_class_distribution.png"></div>
+<div><img src="/figures/03_numeric_distributions.png"></div></div>
+<div style="margin-top:16px"><img src="/figures/02_churn_by_category.png"></div>
+<p class="note">Month-to-month contracts, fiber internet and electronic-check payers typically show the highest churn.</p></section>
+
+<section id="train"><h2>Preprocessing &amp; Training</h2>
+<p class="lead">Everything runs inside one scikit-learn Pipeline, so test data never leaks into training.</p>
+<div class="grid" id="trainStats"></div>
+<div class="card" style="margin-top:16px"><b>Pipeline</b><br>
+Numeric columns → <code>StandardScaler</code> &nbsp;|&nbsp; Categorical columns → <code>OneHotEncoder</code> → <code>LogisticRegression(class_weight="balanced")</code><br>
+<span class="note">class_weight="balanced" compensates for churners being the minority. C is chosen with GridSearchCV (5-fold, scored on ROC-AUC).</span></div>
+<details open><summary>Show the training code (src/train.py)</summary><pre id="src-train.py"></pre></details></section>
+
+<section id="results"><h2>Results</h2>
+<p class="lead">Performance on the held-out test set.</p>
+<div class="tblwrap" id="resT"></div>
+<div class="imgs"><div><img src="/figures/04_confusion_matrix.png"></div><div><img src="/figures/05_roc_curves.png"></div></div>
+<h3 style="margin-top:24px">What drives churn (Logistic Regression coefficients)</h3>
+<p class="note">Orange increases churn risk, blue reduces it.</p>
+<div class="bars" id="coefs"></div></section>
+
+<section id="try"><h2>Try it – predict a customer</h2>
+<p class="lead">Change the values and see the model's churn probability and the reasons behind it.</p>
+<form id="form"></form>
+<button class="go" id="go">Predict churn</button>
+<div class="card" id="out" style="margin-top:20px;display:none"></div></section>
+
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const tabs=[["overview","Overview"],["data","Data"],["eda","EDA"],["train","Training"],["results","Results"],["try","Try it"]];
+tabs.forEach(([id,l])=>{const b=document.createElement("button");b.textContent=l;b.onclick=()=>show(id);b.dataset.id=id;$("nav").appendChild(b)});
+function show(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===id));
+document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.id===id));window.scrollTo(0,0)}
+const table=(rows,hl)=>{const c=Object.keys(rows[0]);return "<table><tr>"+c.map(x=>`<th>${x}</th>`).join("")+"</tr>"+rows.map(r=>"<tr>"+c.map(k=>`<td class="${hl&&hl(k,r[k])?"hl":""}">${r[k]}</td>`).join("")+"</tr>").join("")+"</table>"};
+const stat=(v,l)=>`<div class="card"><div class="stat">${v}<small>${l}</small></div></div>`;
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+async function loadSrc(n){const r=await (await fetch("/api/source/"+n)).json();$("src-"+n).textContent=r.code}
+
+(async()=>{
+const o=await (await fetch("/api/overview")).json();
+const m=await (await fetch("/api/metrics")).json();
+$("stats").innerHTML=stat(o.rows.toLocaleString(),"customers")+stat(o.cols,"columns")+stat((o.churn_rate*100).toFixed(1)+"%","churn rate")+stat("2","models compared");
+$("dataStats").innerHTML=stat(o.rows.toLocaleString(),"rows")+stat(o.cols,"raw columns")+stat(o.blank_total_charges,"blank TotalCharges fixed");
+$("rawT").innerHTML=table(o.raw_head,(k,v)=>k==="TotalCharges"&&String(v).trim()==="");
+$("cleanT").innerHTML=table(o.clean_head);
+$("trainStats").innerHTML=stat(m.n_train.toLocaleString(),"training rows (80%)")+stat(m.n_test.toLocaleString(),"test rows (20%)")+stat("C = "+m.best_params.clf__C,"best regularization")+stat(m.cv_auc.toFixed(3),"cross-val ROC-AUC");
+$("resT").innerHTML=table(m.results);
+const ent=Object.entries(m.coefficients).sort((a,b)=>b[1]-a[1]);
+const top=[...ent.slice(0,8),...ent.slice(-8)];const mx=Math.max(...top.map(t=>Math.abs(t[1])));
+$("coefs").innerHTML=top.map(([k,v])=>`<div class="row"><span>${k.split("__")[1]}</span><div class="bar ${v>0?"up":"down"}" style="width:${Math.abs(v)/mx*100}%"></div><span>${v>0?"+":""}${v.toFixed(2)}</span></div>`).join("");
+["data_prep.py","train.py"].forEach(loadSrc);
+$("form").innerHTML=o.schema.map(f=>`<div><label>${f.name}</label>`+(f.type==="number"?`<input type="number" step="any" id="f_${f.name}" value="${f.default}" min="${f.min}" max="${f.max}">`:`<select id="f_${f.name}">${f.options.map(x=>`<option ${x===f.default?"selected":""}>${x}</option>`).join("")}</select>`)+"</div>").join("");
+$("go").onclick=async()=>{const body={};o.schema.forEach(f=>body[f.name]=$("f_"+f.name).value);
+const r=await (await fetch("/api/predict",{method:"POST",body:JSON.stringify(body)})).json();const out=$("out");out.style.display="block";
+if(r.error){out.textContent="Error: "+r.error;return}
+const pct=(r.probability*100).toFixed(1),col=r.churn?"var(--hot)":"var(--ok)";
+const mx=Math.max(...r.factors.map(f=>Math.abs(f.effect)));
+out.innerHTML=`<div class="big" style="color:${col}">${pct}% churn probability</div><b>${r.churn?"Likely to CHURN":"Likely to STAY"}</b>
+<div class="gauge"><div style="width:${pct}%;background:${col}"></div></div><h3>Why? (biggest contributing factors)</h3><div class="bars">`+
+r.factors.map(f=>`<div class="row"><span>${f.feature}</span><div class="bar ${f.effect>0?"up":"down"}" style="width:${Math.abs(f.effect)/mx*100}%"></div><span>${f.effect>0?"+":""}${f.effect.toFixed(2)}</span></div>`).join("")+`</div><p class="note">Orange pushes toward churn, blue toward staying.</p>`};
+show("overview");
+})();
+</script>
+</body>
+</html>
